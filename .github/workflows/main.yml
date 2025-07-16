@@ -60,7 +60,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP_1 }} << 'EOF'
-            cd /home/user1/Deploying-Frontend-apps
+            cd /home/user1/TU-SQL
             sudo docker-compose down -v
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
             sudo docker-compose up -d
