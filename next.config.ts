@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true, // Опционально: отключает ошибки TypeScript при сборке
   },
+  module.exports = {
+  output: 'standalone', 
+}
 };
 
 export default nextConfig;
