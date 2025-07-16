@@ -1,0 +1,70 @@
+.navbar {
+  background-color: #092044;
+  margin: 30px;
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: 40px;
+  border-radius: 35px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  width: calc(100% - 60px); /* Учитываем margin */
+}
+
+.navLeft {
+  display: flex;
+  gap: 2rem;
+}
+
+.navLink {
+  color: #fff;
+  font-size: 15px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.navLink:hover {
+  color: #0070f3;
+}
+
+.applyLink {
+  background-color: #0070f3;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.applyLink:hover {
+  background-color: #005bb5;
+}
+
+.heroBanner {
+  background-color: #f0f0f0;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.heroTitle {
+  font-size: 1.8rem;
+  color: #333;
+  line-height: 1.4;
+}
+
+.navRight {
+  display: flex;
+  grid-template-columns: 4;
+  gap: 30px;
+}
+
+.navRight img {
+  height: 25px;
+}
