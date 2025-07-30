@@ -41,6 +41,14 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+          
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./nginx/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
         
   deploy-server-1:
     needs: build 
@@ -57,6 +65,7 @@ jobs:
             cd /home/user1/TU-SQL
             sudo docker-compose down -v
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
             sudo docker-compose up -d
             echo "Deployment completed!"
             sudo docker ps
