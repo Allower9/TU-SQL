@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    build: ./nginx
+    images: allower99/nginx-tu
     depends_on:
       - next-app
     volumes:
