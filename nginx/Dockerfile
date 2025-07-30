@@ -3,9 +3,9 @@ FROM nginx:alpine
 # Удаляем дефолтный конфиг
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Копируем базовые конфиги
+# Копируем наши конфиги
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY conf.d/ /etc/nginx/conf.d/
+COPY conf.d/allower.ru.conf /etc/nginx/conf.d/allower.ru.conf
 
 # Создаем директории для сертификатов
 RUN mkdir -p /etc/letsencrypt/live/allower.ru
