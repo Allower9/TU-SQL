@@ -1,10 +1,20 @@
 version: '3.8'
 
 services:
-  next-app:
+  next-app-1:
     build: .
     ports:
       - "3000:3000"  # Для локального тестирования (можно убрать в продакшене)
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+  next-app-2:
+    build: .
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+  next-app-3:
+    build: .
     environment:
       - NODE_ENV=production
     restart: unless-stopped
