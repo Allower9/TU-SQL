@@ -2,19 +2,25 @@ version: '3.8'
 
 services:
   next-app-1:
-    build: .
+    image: allower99/frontend-tu  # Используем готовый образ из Docker Hub
     ports:
-      - "3000:3000"  # Для локального тестирования (можно убрать в продакшене)
+      - "3000:3000"  # Пробрасываем порт 3000
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+
   next-app-2:
-    build: .
+    image: allower99/frontend-tu  # Используем готовый образ из Docker Hub
+    ports:
+      - "3000:3000"  # Пробрасываем порт 3000
     environment:
       - NODE_ENV=production
     restart: unless-stopped
+
   next-app-3:
-    build: .
+    image: allower99/frontend-tu  # Используем готовый образ из Docker Hub
+    ports:
+      - "3000:3000"  # Пробрасываем порт 3000
     environment:
       - NODE_ENV=production
     restart: unless-stopped
