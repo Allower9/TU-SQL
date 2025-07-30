@@ -22,13 +22,9 @@ services:
   nginx:
     image: allower99/nginx-tu
     volumes:
+      - ./nginx/conf.d/allower.ru.conf:/etc/nginx/conf.d/default.conf  # Только один файл!
       - /etc/letsencrypt:/etc/letsencrypt:ro
-      - ./nginx/conf.d/allower.ru.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "80:80"
       - "443:443"
-    depends_on:
-      - next-app-1
-      - next-app-2
-      - next-app-3
     restart: unless-stopped
