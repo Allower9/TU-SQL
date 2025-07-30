@@ -1,18 +1,18 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  # Frontend-приложение
-  frontend:
-    image: allower99/frontend-tu:latest
-    container_name: frontend
-    hostname: frontend
+  next-app:
+    build: .
+    ports:
+      - "3000:3000"  # Для локального тестирования (можно убрать в продакшене)
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  nginx:
+    build: ./nginx
     ports:
       - "80:80"
+    depends_on:
+      - next-app
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    networks:
-      - monitoring_net

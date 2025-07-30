@@ -1,22 +1,33 @@
-# Этап сборки (builder)
+# Используем официальный образ Node.js
 FROM node:18-alpine AS builder
+
+# Рабочая директория
 WORKDIR /app
+
+# Копируем package.json и package-lock.json
 COPY package*.json ./
+
+# Устанавливаем зависимости
 RUN npm ci
+
+# Копируем остальные файлы
 COPY . .
+
+# Собираем приложение
 RUN npm run build
 
-# Этап запуска
-FROM nginx:alpine
-COPY nginx/frontend.conf /etc/nginx/conf.d/default.conf
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
+# Запускаем в production-режиме
+FROM node:18-alpine AS runner
+WORKDIR /app
 
-# Копируем билд Next.js
-COPY --from=builder --chown=nginx:nginx /app/.next/standalone /usr/share/nginx/html
-COPY --from=builder --chown=nginx:nginx /app/.next/static /usr/share/nginx/html/.next/static
+# Копируем только нужные файлы
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/public ./public
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost/ || exit 1
+# Указываем порт (Next.js по умолчанию использует 3000)
+EXPOSE 3000
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Запускаем сервер
+CMD ["npm", "start"]
