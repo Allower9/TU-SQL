@@ -1,11 +1,15 @@
 FROM nginx:alpine
 
-# Копируем конфиг Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Удаляем дефолтный конфиг
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Можно добавить статику, если нужно
-# COPY ../public /usr/share/nginx/html
+# Копируем наши конфиги
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx/conf.d/allower.online.conf /etc/nginx/conf.d/
 
-EXPOSE 80
+# SSL-сертификаты (если используем свои)
+# COPY ssl/ /etc/ssl/certs/
+
+EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
