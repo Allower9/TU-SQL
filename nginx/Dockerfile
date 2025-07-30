@@ -3,12 +3,12 @@ FROM nginx:alpine
 # Удаляем дефолтный конфиг
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Копируем наши конфиги
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/conf.d/allower.ru.conf /etc/nginx/conf.d/
+# Копируем базовые конфиги
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY conf.d/ /etc/nginx/conf.d/
 
-# SSL-сертификаты (если используем свои)
-# COPY ssl/ /etc/ssl/certs/
+# Создаем директории для сертификатов
+RUN mkdir -p /etc/letsencrypt/live/allower.ru
 
 EXPOSE 80 443
 
