@@ -27,14 +27,15 @@ services:
 
   nginx:
     build: ./nginx
-    ports:
-      - "80:80"
-      - "443:443"
     depends_on:
       - next-app
     volumes:
-      - ./data/certbot/conf:/etc/letsencrypt  # Для Let's Encrypt
-      - ./data/certbot/www:/var/www/certbot
+      - /etc/letsencrypt/live/allower.ru/:/etc/letsencrypt/live/allower.ru/:ro
+      - /etc/letsencrypt/archive/allower.ru/:/etc/letsencrypt/archive/allower.ru/:ro
+      - ./nginx/conf.d/allower.ru.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+      - "443:443"
     restart: unless-stopped
 
   certbot:
