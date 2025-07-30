@@ -5,7 +5,7 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 # Копируем наши конфиги
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-COPY nginx/conf.d/allower.online.conf /etc/nginx/conf.d/
+COPY nginx/conf.d/allower.ru.conf /etc/nginx/conf.d/
 
 # SSL-сертификаты (если используем свои)
 # COPY ssl/ /etc/ssl/certs/
