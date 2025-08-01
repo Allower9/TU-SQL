@@ -4,7 +4,7 @@ FROM nginx:alpine
 RUN rm -f /etc/nginx/conf.d/*
 
 # Копируем наш основной конфиг
-COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 
 # Создаем директории для сертификатов
