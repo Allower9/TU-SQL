@@ -65,10 +65,10 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} "
             cd /home/user1/TU-SQL || exit 1
-            sudo docker-compose -f docker-compose.yaml down -v
+            sudo docker-compose -f docker-compose.yml down -v
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-            sudo docker-compose -f docker-compose.yaml up -d
+            sudo docker-compose -f docker-compose.yml up -d
             echo 'Deployment completed!'
             sudo docker ps
           "
