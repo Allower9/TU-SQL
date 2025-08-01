@@ -3,7 +3,7 @@ name: Deploy Next.js to Server
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev2 ]
     
 
 jobs:
