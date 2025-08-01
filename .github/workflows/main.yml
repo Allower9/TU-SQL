@@ -45,8 +45,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./nginx  # Контекст - папка nginx
-          file: ./nginx/Dockerfile  # Путь к Dockerfile для nginx
+          context: .  # корень репозитория
+          file: ./nginx/Dockerfile  # путь от корня
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
         
