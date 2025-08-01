@@ -37,16 +37,16 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: .  # Корень проекта для Next.js
+          file: Dockerfile  # Dockerfile для фронтенда
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
           
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./nginx
-          file: Dockerfile 
+          context: ./nginx  # Контекст - папка nginx
+          file: ./nginx/Dockerfile  # Путь к Dockerfile для nginx
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
         
