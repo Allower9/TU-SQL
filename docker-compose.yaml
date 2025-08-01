@@ -37,7 +37,6 @@ services:
       - next-app-2
       - next-app-3
     volumes:
-    - ./nginx/conf.d/allower.ru.conf:/etc/nginx/conf.d/allower.ru.conf  
     - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "80:80"
