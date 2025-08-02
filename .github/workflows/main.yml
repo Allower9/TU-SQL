@@ -6,6 +6,10 @@ on:
       - main
       - dev
 
+
+
+
+      
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -47,7 +51,7 @@ jobs:
       - name: Build and push Nginx image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./nginx
           file: ./nginx/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
@@ -55,6 +59,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # Увеличенный таймаут
     strategy:
       matrix:
         include:
@@ -81,17 +86,30 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
 
-      - name: Deploy to server
+      - name: Check server disk space
+        run: |
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
+            df -h
+            docker system df
+          "
+
+      - name: Pull images with retry
+        run: |
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
+            for i in {1..3}; do
+              docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env_name }} && break || sleep 15
+            done
+            for i in {1..3}; do
+              docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest && break || sleep 15
+            done
+          "
+
+      - name: Deploy containers
         if: github.ref == 'refs/heads/${{ matrix.branch }}'
         run: |
           ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
             cd TU-SQL-${{ matrix.env_name }} || exit 1
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env_name }}
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-            
-            sudo docker-compose -f ${{ matrix.compose_file }} down -v
-            sudo docker-compose -f ${{ matrix.compose_file }} up -d
-            
-            echo 'Deployment to ${{ matrix.env_name }} completed!'
-            sudo docker ps
+            docker-compose -f ${{ matrix.compose_file }} down -v
+            docker-compose -f ${{ matrix.compose_file }} up -d
+            docker ps
           "
