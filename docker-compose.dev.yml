@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   next-app-1:
-    image: allower99/frontend-tu:latest  # Твой образ вместо локальной сборки
+    image: allower99/frontend-tu:dev  # Твой образ вместо локальной сборки
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
 
   next-app-2:
-    image: allower99/frontend-tu:latest  # Тот же образ
+    image: allower99/frontend-tu:dev  # Тот же образ
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   next-app-3:
-    image: allower99/frontend-tu:latest  # Тот же образ
+    image: allower99/frontend-tu:dev  # Тот же образ
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
