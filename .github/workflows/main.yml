@@ -1,90 +1,117 @@
-
-name: Deploy Next.js to Server
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-    
+    branches:
+      - main
+      - dev
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Проверка кода
         uses: actions/checkout@v4
 
-      - name: Install Node.js
+      - name: Установка Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Установка зависимостей
         run: npm install
 
-      - name: Build project
+      - name: Сборка проекта
         run: npm run build
-        
-      - name: Set up Docker Buildx
+
+      - name: Настройка Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Вход в Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Сборка и отправка образа Frontend
         uses: docker/build-push-action@v5
         with:
-          context: .  # Корень проекта для Next.js
-          file: Dockerfile  # Dockerfile для фронтенда
+          context: .
+          file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
-          
-      - name: Build and push Docker image
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
+            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+
+      - name: Сборка и отправка образа Nginx
         uses: docker/build-push-action@v5
         with:
-          context: .  # корень репозитория
-          file: ./nginx/Dockerfile  # путь от корня
+          context: .
+          file: ./nginx/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-        
-  deploy-server-1:
-    needs: build 
+
+  deploy-dev:
+    if: github.ref_name == 'dev'
+    needs: build
     runs-on: ubuntu-latest
+
     steps:
-      - name: Setup SSH
+      - name: Настройка SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
-    
-      - name: Deploy
+
+      - name: Деплой на DEV сервер
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} "
-            cd TU-SQL || exit 1
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+          ssh -o StrictHostKeyChecking=no user1@${{ secrets.DEV_SERVER_IP }} << 'EOF'
+            set -e
+            echo "✅ Подключение к DEV серверу"
+            cd TU-SQL-dev || exit 1
+
+            echo "📦 Pull образов"
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:dev
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-            sudo docker-compose -f docker-compose.yml down -v
-            sudo docker-compose -f docker-compose.yml up -d
-            echo 'Deployment completed!'
+
+            echo "🔁 Обновление контейнеров"
+            sudo docker-compose -f docker-compose.dev.yml pull
+            sudo docker-compose -f docker-compose.dev.yml down -v
+            sudo docker-compose -f docker-compose.dev.yml up -d
+
+            echo "📋 Активные контейнеры:"
             sudo docker ps
-          "
-          
-  # deploy-server-2:
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Setup SSH
-  #       uses: webfactory/ssh-agent@v0.7.0
-  #       with:
-  #         ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
-  #     - name: Deploy-2
-  #       run: |
-  #           ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP_2 }} << 'EOF'
-  #           cd /home/user1/Deploying-Frontend-apps
-  #           sudo docker-compose down -v
-  #           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:latest
-  #           sudo docker-compose up -d
-  #           echo "Deployment completed!"
-  #           sudo docker ps
+            echo "✅ Деплой DEV завершён"
+          EOF
+
+  deploy-prod-1:
+    if: github.ref_name == 'main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Настройка SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+
+      - name: Деплой на PROD сервер 1
+        run: |
+          ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} << 'EOF'
+            set -e
+            echo "✅ Подключение к PROD серверу 1"
+            cd TU-SQL-prod || exit 1
+
+            echo "📦 Pull образов"
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:main
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
+
+            echo "🔁 Обновление контейнеров"
+            sudo docker-compose -f docker-compose.prod.yml pull
+            sudo docker-compose -f docker-compose.prod.yml down -v
+            sudo docker-compose -f docker-compose.prod.yml up -d
+
+            echo "📋 Активные контейнеры:"
+            sudo docker ps
+            echo "✅ Деплой PROD #1 завершён"
+          EOF
+

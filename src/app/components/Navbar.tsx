@@ -13,7 +13,7 @@ const Navbar = () => {
             Приемная комиссия
           </Link>
           <Link href="/programs" className={styles.navLink}>
-            Образовательные программы
+            Образовательные программыk
           </Link>
           <Link href="/admission" className={styles.navLink}>
             Поступление

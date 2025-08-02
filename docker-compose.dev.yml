@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  next-app-1:
+    image: allower99/frontend-tu:dev  # Твой образ вместо локальной сборки
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  next-app-2:
+    image: allower99/frontend-tu:dev  # Тот же образ
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  next-app-3:
+    image: allower99/frontend-tu:dev  # Тот же образ
+    environment:
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  nginx:
+    image: allower99/nginx-tu:latest
+    networks:
+      - app-network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./nginx/conf.d/allower.online.conf:/etc/nginx/conf.d/default.conf
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
