@@ -49,7 +49,7 @@ jobs:
       - name: Build and push Nginx image
         uses: docker/build-push-action@v5
         with:
-          context: ./nginx
+          context: .
           file: ./nginx/Dockerfile
           push: true
           tags: ${{ env.DOCKER_USERNAME }}/nginx-tu:latest
