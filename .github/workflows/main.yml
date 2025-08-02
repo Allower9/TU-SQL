@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Проверка кода
         uses: actions/checkout@v4
@@ -52,72 +51,67 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
 
-  deploy:
+  deploy-dev:
+    if: github.ref_name == 'dev'
+    needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
 
     steps:
-      - name: Определение окружения
-        id: set_env
-        run: |
-          if [ "${{ github.ref_name }}" == "main" ]; then
-            echo "ENV=prod" >> $GITHUB_OUTPUT
-            echo "SERVER_IP=${{ secrets.PROD_SERVER_IP }}" >> $GITHUB_OUTPUT
-          else
-            echo "ENV=dev" >> $GITHUB_OUTPUT
-            echo "SERVER_IP=${{ secrets.DEV_SERVER_IP }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Настройка SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
 
-      - name: Проверка соединения с сервером
+      - name: Деплой на DEV сервер
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
-            echo 'Соединение с сервером успешно'
-            uname -a
-          "
+          ssh -o StrictHostKeyChecking=no user1@${{ secrets.DEV_SERVER_IP }} << 'EOF'
+            set -e
+            echo "✅ Подключение к DEV серверу"
+            cd TU-SQL-dev || exit 1
 
-      - name: Подготовка Docker окружения
-        timeout-minutes: 5
-        run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
-            sudo docker system prune -a -f || true
-            sudo docker system df
-            df -h
-          "
+            echo "📦 Pull образов"
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:dev
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
 
-      - name: Получение образа Frontend (с повтором)
-        timeout-minutes: 20
-        run: |
-          for i in {1..3}; do
-            ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
-              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ steps.set_env.outputs.ENV }}
-            " && break || sleep 30
-          done
+            echo "🔁 Обновление контейнеров"
+            sudo docker-compose -f docker-compose.dev.yml pull
+            sudo docker-compose -f docker-compose.dev.yml down -v
+            sudo docker-compose -f docker-compose.dev.yml up -d
 
-      - name: Получение образа Nginx (с повтором)
-        timeout-minutes: 15
-        run: |
-          for i in {1..3}; do
-            ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
-              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-            " && break || sleep 30
-          done
-
-      - name: Развертывание контейнеров
-        timeout-minutes: 10
-        run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
-            cd TU-SQL-${{ steps.set_env.outputs.ENV }} || exit 1
-            sudo docker-compose -f docker-compose.${{ steps.set_env.outputs.ENV }}.yml down -v
-            sudo docker-compose -f docker-compose.${{ steps.set_env.outputs.ENV }}.yml up -d
+            echo "📋 Активные контейнеры:"
             sudo docker ps
-          "
+            echo "✅ Деплой DEV завершён"
+          EOF
 
-      - name: Проверка развертывания
+  deploy-prod-1:
+    if: github.ref_name == 'main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Настройка SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+
+      - name: Деплой на PROD сервер 1
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "\
-            sudo docker ps --format 'table {{.ID}}\t{{.
+          ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} << 'EOF'
+            set -e
+            echo "✅ Подключение к PROD серверу 1"
+            cd TU-SQL-prod || exit 1
+
+            echo "📦 Pull образов"
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:main
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
+
+            echo "🔁 Обновление контейнеров"
+            sudo docker-compose -f docker-compose.prod.yml pull
+            sudo docker-compose -f docker-compose.prod.yml down -v
+            sudo docker-compose -f docker-compose.prod.yml up -d
+
+            echo "📋 Активные контейнеры:"
+            sudo docker ps
+            echo "✅ Деплой PROD #1 завершён"
+          EOF
+
