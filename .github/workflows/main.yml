@@ -6,14 +6,11 @@ on:
       - main
       - dev
 
-env:
-  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  PROD_SERVER_IP: ${{ secrets.PROD_SERVER_IP }}
-  DEV_SERVER_IP: ${{ secrets.DEV_SERVER_IP }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
     steps:
       - name: Checkout code
@@ -52,7 +49,7 @@ jobs:
       - name: Build and push Nginx image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./nginx
           file: ./nginx/Dockerfile
           push: true
           tags: ${{ env.DOCKER_USERNAME }}/nginx-tu:latest
@@ -64,14 +61,21 @@ jobs:
       matrix:
         include:
           - branch: main
-            server_ip: ${{ env.PROD_SERVER_IP }}
             env: prod
             compose_file: docker-compose.prod.yml
           - branch: dev
-            server_ip: ${{ env.DEV_SERVER_IP }}
             env: dev
             compose_file: docker-compose.dev.yml
     steps:
+      - name: Determine server IP
+        id: server_ip
+        run: |
+          if [ "${{ matrix.branch }}" == "main" ]; then
+            echo "SERVER_IP=${{ secrets.PROD_SERVER_IP }}" >> $GITHUB_OUTPUT
+          else
+            echo "SERVER_IP=${{ secrets.DEV_SERVER_IP }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
@@ -80,7 +84,7 @@ jobs:
       - name: Deploy to server
         if: github.ref == 'refs/heads/${{ matrix.branch }}'
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.server_ip.outputs.SERVER_IP }} "
             cd TU-SQL-${{ matrix.env }} || exit 1
             sudo docker pull ${{ env.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
             sudo docker pull ${{ env.DOCKER_USERNAME }}/nginx-tu:latest
