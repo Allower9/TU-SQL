@@ -11,30 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Проверка кода
         uses: actions/checkout@v4
 
-      - name: Install Node.js
+      - name: Установка Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
+      - name: Установка зависимостей
         run: npm install
 
-      - name: Build project
+      - name: Сборка проекта
         run: npm run build
-        
-      - name: Set up Docker Buildx
+
+      - name: Настройка Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Вход в Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Frontend image
+      - name: Сборка и отправка образа Frontend
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -44,7 +44,7 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
             ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
 
-      - name: Build and push Nginx image
+      - name: Сборка и отправка образа Nginx
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -54,71 +54,70 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45  # Увеличиваем общий таймаут
-    
-    strategy:
-      matrix:
-        include:
-          - branch: main
-            server_ip: ${{ secrets.PROD_SERVER_IP }}
-            env: prod
-          - branch: dev
-            server_ip: ${{ secrets.DEV_SERVER_IP }}
-            env: dev
+    timeout-minutes: 45
 
     steps:
-      - name: Setup SSH
+      - name: Определение окружения
+        id: set_env
+        run: |
+          if [ "${{ github.ref_name }}" == "main" ]; then
+            echo "ENV=prod" >> $GITHUB_OUTPUT
+            echo "SERVER_IP=${{ secrets.PROD_SERVER_IP }}" >> $GITHUB_OUTPUT
+          else
+            echo "ENV=dev" >> $GITHUB_OUTPUT
+            echo "SERVER_IP=${{ secrets.DEV_SERVER_IP }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Настройка SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
 
-      - name: Check server connection
+      - name: Проверка соединения с сервером
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
-            echo 'Server connection successful'
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
+            echo 'Соединение с сервером успешно'
             uname -a
           "
 
-      - name: Prepare Docker environment
+      - name: Подготовка Docker окружения
         timeout-minutes: 5
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
             sudo docker system prune -a -f || true
             sudo docker system df
             df -h
           "
 
-      - name: Pull Frontend image (with retry)
+      - name: Получение образа Frontend (с повтором)
         timeout-minutes: 20
         run: |
           for i in {1..3}; do
-            ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
-              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
+            ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
+              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ steps.set_env.outputs.ENV }}
             " && break || sleep 30
           done
 
-      - name: Pull Nginx image (with retry)
+      - name: Получение образа Nginx (с повтором)
         timeout-minutes: 15
         run: |
           for i in {1..3}; do
-            ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+            ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
               sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
             " && break || sleep 30
           done
 
-      - name: Deploy containers
+      - name: Развертывание контейнеров
         timeout-minutes: 10
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
-            cd TU-SQL-${{ matrix.env }} || exit 1
-            sudo docker-compose -f docker-compose.${{ matrix.env }}.yml down -v
-            sudo docker-compose -f docker-compose.${{ matrix.env }}.yml up -d
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
+            cd TU-SQL-${{ steps.set_env.outputs.ENV }} || exit 1
+            sudo docker-compose -f docker-compose.${{ steps.set_env.outputs.ENV }}.yml down -v
+            sudo docker-compose -f docker-compose.${{ steps.set_env.outputs.ENV }}.yml up -d
             sudo docker ps
           "
 
-      - name: Verify deployment
+      - name: Проверка развертывания
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
-            sudo docker ps --format 'table {{.ID}}\t{{.Names}}\t{{.Status}}'
-            curl -I localhost || true
-          "
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
+            sudo docker ps --format 'table {{.ID}}\t{{.Names}}\t
