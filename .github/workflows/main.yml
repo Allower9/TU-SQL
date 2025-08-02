@@ -9,8 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
     steps:
       - name: Checkout code
@@ -42,8 +40,9 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
-            
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
+            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
 
       - name: Build and push Nginx image
         uses: docker/build-push-action@v5
@@ -60,14 +59,23 @@ jobs:
       matrix:
         include:
           - branch: main
-            server_ip: ${{ secrets.PROD_SERVER_IP }}
-            env: prod
+            env_name: prod
             compose_file: docker-compose.prod.yml
+            server_type: prod
           - branch: dev
-            server_ip: ${{ secrets.DEV_SERVER_IP }}
-            env: dev
+            env_name: dev
             compose_file: docker-compose.dev.yml
+            server_type: dev
     steps:
+      - name: Get server IP
+        id: get_ip
+        run: |
+          if [ "${{ matrix.server_type }}" == "prod" ]; then
+            echo "SERVER_IP=${{ secrets.PROD_SERVER_IP }}" >> $GITHUB_OUTPUT
+          else
+            echo "SERVER_IP=${{ secrets.DEV_SERVER_IP }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
@@ -76,14 +84,14 @@ jobs:
       - name: Deploy to server
         if: github.ref == 'refs/heads/${{ matrix.branch }}'
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
-            cd TU-SQL-${{ matrix.env }} || exit 1
-            sudo docker pull ${{ env.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
-            sudo docker pull ${{ env.DOCKER_USERNAME }}/nginx-tu:latest
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
+            cd TU-SQL-${{ matrix.env_name }} || exit 1
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env_name }}
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
             
             sudo docker-compose -f ${{ matrix.compose_file }} down -v
             sudo docker-compose -f ${{ matrix.compose_file }} up -d
             
-            echo 'Deployment to ${{ matrix.env }} completed!'
+            echo 'Deployment to ${{ matrix.env_name }} completed!'
             sudo docker ps
           "
