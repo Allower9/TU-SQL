@@ -6,10 +6,6 @@ on:
       - main
       - dev
 
-
-
-
-      
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -57,59 +53,72 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # Увеличенный таймаут
+    timeout-minutes: 45  # Увеличиваем общий таймаут
+    
     strategy:
       matrix:
         include:
           - branch: main
-            env_name: prod
-            compose_file: docker-compose.prod.yml
-            server_type: prod
+            server_ip: ${{ secrets.PROD_SERVER_IP }}
+            env: prod
           - branch: dev
-            env_name: dev
-            compose_file: docker-compose.dev.yml
-            server_type: dev
-    steps:
-      - name: Get server IP
-        id: get_ip
-        run: |
-          if [ "${{ matrix.server_type }}" == "prod" ]; then
-            echo "SERVER_IP=${{ secrets.PROD_SERVER_IP }}" >> $GITHUB_OUTPUT
-          else
-            echo "SERVER_IP=${{ secrets.DEV_SERVER_IP }}" >> $GITHUB_OUTPUT
-          fi
+            server_ip: ${{ secrets.DEV_SERVER_IP }}
+            env: dev
 
+    steps:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
 
-      - name: Check server disk space
+      - name: Check server connection
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
-            df -h
-            docker system df
+          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+            echo 'Server connection successful'
+            uname -a
           "
 
-      - name: Pull images with retry
+      - name: Prepare Docker environment
+        timeout-minutes: 5
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
-            for i in {1..3}; do
-              docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env_name }} && break || sleep 15
-            done
-            for i in {1..3}; do
-              docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest && break || sleep 15
-            done
+          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+            sudo docker system prune -a -f || true
+            sudo docker system df
+            df -h
           "
+
+      - name: Pull Frontend image (with retry)
+        timeout-minutes: 20
+        run: |
+          for i in {1..3}; do
+            ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
+            " && break || sleep 30
+          done
+
+      - name: Pull Nginx image (with retry)
+        timeout-minutes: 15
+        run: |
+          for i in {1..3}; do
+            ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
+            " && break || sleep 30
+          done
 
       - name: Deploy containers
-        if: github.ref == 'refs/heads/${{ matrix.branch }}'
+        timeout-minutes: 10
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.get_ip.outputs.SERVER_IP }} "
-            cd TU-SQL-${{ matrix.env_name }} || exit 1
-            docker-compose -f ${{ matrix.compose_file }} down -v
-            docker-compose -f ${{ matrix.compose_file }} up -d
-            docker ps
+          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+            cd TU-SQL-${{ matrix.env }} || exit 1
+            sudo docker-compose -f docker-compose.${{ matrix.env }}.yml down -v
+            sudo docker-compose -f docker-compose.${{ matrix.env }}.yml up -d
+            sudo docker ps
+          "
+
+      - name: Verify deployment
+        run: |
+          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+            sudo docker ps --format 'table {{.ID}}\t{{.Names}}\t{{.Status}}'
+            curl -I localhost || true
           "
