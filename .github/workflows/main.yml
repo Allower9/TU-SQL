@@ -42,9 +42,8 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
-            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
+            
 
       - name: Build and push Nginx image
         uses: docker/build-push-action@v5
