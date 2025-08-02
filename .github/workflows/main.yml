@@ -119,5 +119,5 @@ jobs:
 
       - name: Проверка развертывания
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "
-            sudo docker ps --format 'table {{.ID}}\t{{.Names}}\t
+          ssh -o StrictHostKeyChecking=no user1@${{ steps.set_env.outputs.SERVER_IP }} "\
+            sudo docker ps --format 'table {{.ID}}\t{{.
