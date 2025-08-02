@@ -1,10 +1,10 @@
-
-name: Deploy Next.js to Server
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
-    
+    branches:
+      - main
+      - dev
 
 jobs:
   build:
@@ -34,57 +34,55 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push Frontend image
         uses: docker/build-push-action@v5
         with:
-          context: .  # Корень проекта для Next.js
-          file: Dockerfile  # Dockerfile для фронтенда
+          context: .
+          file: Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
-          
-      - name: Build and push Docker image
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
+            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+
+      - name: Build and push Nginx image
         uses: docker/build-push-action@v5
         with:
-          context: .  # корень репозитория
-          file: ./nginx/Dockerfile  # путь от корня
+          context: ./nginx
+          file: ./nginx/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-        
-  deploy-server-1:
-    needs: build 
+
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - branch: main
+            server_ip: ${{ secrets.PROD_SERVER_IP }}
+            env: prod
+            compose_file: docker-compose.prod.yml
+          - branch: dev
+            server_ip: ${{ secrets.DEV_SERVER_IP }}
+            env: dev
+            compose_file: docker-compose.dev.yml
     steps:
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
-    
-      - name: Deploy
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/${{ matrix.branch }}'
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} "
-            cd TU-SQL || exit 1
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+          ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
+            cd TU-SQL-${{ matrix.env }} || exit 1
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-            sudo docker-compose -f docker-compose.yml down -v
-            sudo docker-compose -f docker-compose.yml up -d
-            echo 'Deployment completed!'
+            
+            sudo docker-compose -f ${{ matrix.compose_file }} down -v
+            sudo docker-compose -f ${{ matrix.compose_file }} up -d
+            
+            echo 'Deployment to ${{ matrix.env }} completed!'
             sudo docker ps
           "
-          
-  # deploy-server-2:
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Setup SSH
-  #       uses: webfactory/ssh-agent@v0.7.0
-  #       with:
-  #         ssh-private-key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
-  #     - name: Deploy-2
-  #       run: |
-  #           ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP_2 }} << 'EOF'
-  #           cd /home/user1/Deploying-Frontend-apps
-  #           sudo docker-compose down -v
-  #           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:latest
-  #           sudo docker-compose up -d
-  #           echo "Deployment completed!"
-  #           sudo docker ps
