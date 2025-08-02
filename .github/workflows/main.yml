@@ -61,16 +61,15 @@ jobs:
     
       - name: Deploy
         run: |
-          ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} << 'EOF'
-            cd /home/user1/TU-SQL
-            sudo docker-compose down -v
-
+          ssh -o StrictHostKeyChecking=no user1@${{ secrets.PROD_SERVER_IP }} "
+            cd TU-SQL || exit 1
+            sudo docker-compose -f docker-compose.yml down -v
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
-            sudo docker-compose up -d
-            echo "Deployment completed!"
+            sudo docker-compose -f docker-compose.yml up -d
+            echo 'Deployment completed!'
             sudo docker ps
-          EOF
+          "
           
   # deploy-server-2:
   #   needs: build-and-push
