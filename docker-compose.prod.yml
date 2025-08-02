@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   next-app-1:
-    image: allower99/frontend-tu:prod   # Твой образ вместо локальной сборки
+    image: allower99/frontend-tu:main   # поменял с prod на main
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
 
   next-app-2:
-    image: allower99/frontend-tu:prod  # Тот же образ
+    image: allower99/frontend-tu:main   # тоже main
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   next-app-3:
-    image: allower99/frontend-tu:prod  # Тот же образ
+    image: allower99/frontend-tu:main   # main
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
@@ -29,14 +29,14 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: allower99/nginx-tu:latest  # Твой образ Nginx
+    image: allower99/nginx-tu:latest
     networks:
       - app-network
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro  # Только SSL-сертификаты
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       - ./nginx/conf.d/allower.ru.conf:/etc/nginx/conf.d/allower.ru.conf
     restart: unless-stopped
 
