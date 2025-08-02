@@ -6,6 +6,11 @@ on:
       - main
       - dev
 
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  PROD_SERVER_IP: ${{ secrets.PROD_SERVER_IP }}
+  DEV_SERVER_IP: ${{ secrets.DEV_SERVER_IP }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,16 +46,16 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
-            ${{ secrets.DOCKER_USERNAME }}/frontend-tu:latest
+            ${{ env.DOCKER_USERNAME }}/frontend-tu:${{ github.ref_name }}
+            ${{ env.DOCKER_USERNAME }}/frontend-tu:latest
 
       - name: Build and push Nginx image
         uses: docker/build-push-action@v5
         with:
-          context: ./nginx
+          context: .
           file: ./nginx/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
+          tags: ${{ env.DOCKER_USERNAME }}/nginx-tu:latest
 
   deploy:
     needs: build
@@ -59,11 +64,11 @@ jobs:
       matrix:
         include:
           - branch: main
-            server_ip: ${{ secrets.PROD_SERVER_IP }}
+            server_ip: ${{ env.PROD_SERVER_IP }}
             env: prod
             compose_file: docker-compose.prod.yml
           - branch: dev
-            server_ip: ${{ secrets.DEV_SERVER_IP }}
+            server_ip: ${{ env.DEV_SERVER_IP }}
             env: dev
             compose_file: docker-compose.dev.yml
     steps:
@@ -77,8 +82,8 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no user1@${{ matrix.server_ip }} "
             cd TU-SQL-${{ matrix.env }} || exit 1
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/nginx-tu:latest
+            sudo docker pull ${{ env.DOCKER_USERNAME }}/frontend-tu:${{ matrix.env }}
+            sudo docker pull ${{ env.DOCKER_USERNAME }}/nginx-tu:latest
             
             sudo docker-compose -f ${{ matrix.compose_file }} down -v
             sudo docker-compose -f ${{ matrix.compose_file }} up -d
