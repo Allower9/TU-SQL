@@ -1,32 +1,16 @@
 version: '3.8'
 
 services:
-  next-app-1:
-    image: allower99/frontend-tu:dev  # Твой образ вместо локальной сборки
+  next-app:
+    image: allower99/frontend-tu:dev
     environment:
       - NODE_ENV=production
       - HOST=0.0.0.0
     networks:
       - app-network
     restart: unless-stopped
-
-  next-app-2:
-    image: allower99/frontend-tu:dev  # Тот же образ
-    environment:
-      - NODE_ENV=production
-      - HOST=0.0.0.0
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  next-app-3:
-    image: allower99/frontend-tu:dev  # Тот же образ
-    environment:
-      - NODE_ENV=production
-      - HOST=0.0.0.0
-    networks:
-      - app-network
-    restart: unless-stopped
+    deploy:
+      replicas: 3   # создаём 3 контейнера фронтенда автоматически
 
   nginx:
     image: allower99/nginx-tu:latest
@@ -43,3 +27,4 @@ services:
 networks:
   app-network:
     driver: bridge
+
