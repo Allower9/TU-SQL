@@ -14,13 +14,7 @@ const Navbar = () => {
           </Link>
           <Link href="/programs" className={styles.navLink}>
             Образовательные программыkalмык-lox-last-last
-          </Link>
-          <Link href="/admission" className={styles.navLink}>
-            Поступление
-          </Link>
-          <Link href="/hostel" className={styles.navLink}>
-            Об общежитиях
-          </Link>
+          </Link>          
         </div>
       </div>
       <div className={styles.navRight}>

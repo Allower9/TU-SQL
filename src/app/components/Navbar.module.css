@@ -1,18 +1,19 @@
 .navbar {
   background-color: #092044;
-  margin: 30px;
+  margin-top: 20px;
+  margin-inline: 95px;
   height: 80px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-inline: 40px;
-  border-radius: 35px;
+  border-radius: 32px;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  width: calc(100% - 60px); /* Учитываем margin */
+ /* Учитываем margin */
 }
 
 .navLeft {

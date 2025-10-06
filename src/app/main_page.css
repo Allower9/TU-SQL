@@ -1,0 +1,163 @@
+main {
+  padding-inline: 125px;
+  position: relative;
+}
+
+h2 {
+    font-size: 22px;
+    color: black;
+}
+
+h3 {
+  color: black;
+  font-weight: 700;
+  font-size: 22px
+}
+
+h4 {
+  font-family: 'RightGrotesk';
+  color: #002147;
+  font-size: 50px;
+  line-height: 50px;
+}
+
+h5 {
+  color: white;
+  font-size: 18px;
+  line-height: 25px;
+}
+
+h6 {
+  font-size: 12px;
+  color: white;
+}
+
+p {
+  color: black;
+  font-size: 14px;
+}
+
+ul {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+  gap: 30px;
+}
+
+li {
+  padding: 35px;
+  background-color: #092044;
+  border-radius: 28px;
+  height: 210px;
+  width: 300px;
+  justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+
+ul li p {
+  color: white;
+  margin-top: 40px;
+}
+
+.image-container {
+  position: relative;
+  display: inline-block;
+  text-align: center;
+}
+
+.image-container h2 {
+  color: black;
+  position: absolute;
+  width: 230px;
+  top: 30%;
+  left: 10%;
+  line-height: 28px;
+  text-shadow: 
+    0.15px 0.15px 0 currentColor,
+    -0.15px -0.15px 0 currentColor,
+    0.15px -0.15px 0 currentColor,
+    -0.15px 0.15px 0 currentColor;
+}
+
+.image-container img {
+  /* display: block; */
+  /* width: 80%; */
+  height: 170px;
+}
+
+.advantages {
+  padding: 50px;
+  border-radius: 45px;
+  display: flex;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -30%);
+  box-sizing: border-box;
+  justify-content: space-between;
+  position: relative;
+  background-color: #F2F2F2;
+  width: auto;
+
+}
+
+.appeal {
+  padding-top: 220px;
+}
+
+.about {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 100px;
+}
+
+.about img {
+  height: 25px;
+}
+
+.programs {
+  padding-inline: 125px;
+  padding-top: 70px;
+  padding-bottom: 90px;
+  background-color: #F2F2F2;
+  width: 100vw;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 100px;
+  border-radius: 44px;
+}
+
+.labs {
+    margin-top: 650px;
+}
+
+.labs_grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+.labs_grid p {
+    color: black;
+    font-size: 12px;
+}
+
+.grid_col_2 {
+    grid-column: span 2;
+}
+
+.grid_row_2 {
+    grid-row: span 2;
+}
+
+.leonov {
+    display: flex;
+}
+
+.leonov h6 {
+    color: black;
+}
+
